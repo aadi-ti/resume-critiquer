@@ -2,12 +2,13 @@ import streamlit as st
 import PyPDF2
 import os
 import io
-from huggingface_hub import InferenceClient
+import openai
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = openai_api_key
 
 st.set_page_config(page_title="Resume Critiquer", page_icon=":page_with_curl:", layout="centered")
 st.title("Resume Critiquer :page_with_curl:")
@@ -66,14 +67,18 @@ also provide a list of common interview questions for the job role provided.
 also provide an example of changes to be made to the resume based on the analysis.
 also maintain spacing and formatting in the response.
 """
-            client = InferenceClient(model="mistralai/Mixtral-8x7B-Instruct-v0.1", token=huggingface_api_key)
-            response = client.text_generation(
-                prompt,
-                max_new_tokens=1000,
-                temperature=0.7
+
+            response = openai.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert resume reviewer with years of experience in HR and recruitment."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.7,
             )
             st.success("Resume and job role submitted successfully! Here is your analysis:")
             st.markdown("### Analysis Results:")
-            st.markdown(response)
+            st.markdown(response.choices[0].message.content)
         except Exception as e:
             st.error(f"An error occurred while processing the resume: {e}")
